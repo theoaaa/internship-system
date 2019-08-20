@@ -29,7 +29,58 @@
             <result column="offerState" property="state"/>
             <result column="offerImagePath" property="imagePath"/>
         </association>
+        <collection property="roleList"
+                    select="org.scau.internshipsystem.system.mapper.RoleMapper.findRoleOfUserByUserID"
+                    column="id">
+        </collection>
     </resultMap>
+
+    <sql id="userMessageRef">
+        id,
+        account,
+        username,
+        password,
+        grade,
+        subject,
+        email,
+        state,
+        register_time,
+        last_login_time
+    </sql>
+
+    <select id="findUserMessage" resultMap="BaseResultMap">
+        select
+        <include refid="userMessageRef"></include>
+        from user
+        <if test="user!=null">
+            where 1=1
+            <if test="user.grade != null and user.grade!= ''">
+                and grade like concat ('%', #{user.grade}, '%')
+            </if>
+            <if test="user.subject != null and user.subject!= ''">
+                and subject like concat ('%', #{user.subject},'%')
+            </if>
+            <if test="user.roleList != null">
+                and id in (select user_id from user_role_ref where role_id =
+                <foreach collection="user.roleList" item="role" close=")">
+                    #{role.id}
+                </foreach>
+            </if>
+            <if test="user.state != null">
+                and state = #{user.state}
+            </if>
+            <if test="user.account != null and user.account!= ''">
+                and account like concat ('%', #{user.account}, '%')
+            </if>
+        </if>
+    </select>
+
+    <select id="findUserMessageByUserId" resultMap="BaseResultMap" parameterType="int">
+        select
+        <include refid="userMessageRef"></include>
+        from user
+        where id=#{id}
+    </select>
 
     <select id="getUserInternShipInfoList" parameterType="org.scau.internshipsystem.system.param.UserParam" resultMap="BaseResultMap">
         select `user`.id, `user`.account, `user`.username,`user`.grade,`user`.subject ,

@@ -4,6 +4,8 @@ import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import lombok.Data;
 
+import javax.validation.constraints.NotNull;
+
 
 /**
  * <p>
@@ -21,8 +23,10 @@ public class UserRoleRef {
     @TableId(value = "id", type = IdType.AUTO)
     private Integer id;
 
+    @NotNull(message = "userId 不能为空")
     private Integer userId;
 
+    @NotNull(message = "roleId 不能为空")
     private Integer roleId;
 
 

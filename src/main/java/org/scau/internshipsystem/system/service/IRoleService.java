@@ -3,8 +3,6 @@ package org.scau.internshipsystem.system.service;
 import com.baomidou.mybatisplus.extension.service.IService;
 import org.scau.internshipsystem.system.entity.Role;
 
-import java.util.List;
-
 /**
  * <p>
  *  服务类

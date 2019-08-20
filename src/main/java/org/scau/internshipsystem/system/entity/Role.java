@@ -1,9 +1,6 @@
 package org.scau.internshipsystem.system.entity;
 
-import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.TableField;
-import com.baomidou.mybatisplus.annotation.TableId;
-import com.baomidou.mybatisplus.annotation.TableName;
+import com.baomidou.mybatisplus.annotation.*;
 import lombok.Data;
 import org.hibernate.validator.constraints.Length;
 
@@ -29,14 +26,12 @@ public class Role {
 
     @NotBlank(message = "角色名不能为空")
     @Length(min = 2, max = 30, message = "角色名长度在2-30之间")
-    @TableField("role_name")
     private String roleName;
 
     @NotNull(message = "角色状态不能为空")
-    @TableField("state")
     private Integer state;
 
-    @TableField("remark")
+    @TableField(strategy = FieldStrategy.IGNORED)
     private String remark;
 
 

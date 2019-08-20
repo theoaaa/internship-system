@@ -4,4 +4,8 @@
     <select id="customSelect" resultType="org.scau.internshipsystem.system.entity.Role">
         select * from role
     </select>
+
+    <select id="findRoleOfUserByUserID" resultType="role" parameterType="int">
+        select id, role_name from role where id in (select role_id from user_role_ref where user_id=#{userId})
+    </select>
 </mapper>

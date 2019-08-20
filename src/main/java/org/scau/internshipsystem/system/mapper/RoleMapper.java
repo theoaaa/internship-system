@@ -15,4 +15,6 @@ import java.util.List;
  */
 public interface RoleMapper extends BaseMapper<Role> {
      List<Role> customSelect();
+
+     List<Role> findRoleOfUserByUserID(int userId);
 }

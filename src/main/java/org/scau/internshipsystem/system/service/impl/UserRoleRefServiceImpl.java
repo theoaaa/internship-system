@@ -1,5 +1,6 @@
 package org.scau.internshipsystem.system.service.impl;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import org.scau.internshipsystem.system.entity.UserRoleRef;
 import org.scau.internshipsystem.system.mapper.UserRoleRefMapper;
@@ -16,5 +17,8 @@ import org.springframework.stereotype.Service;
  */
 @Service
 public class UserRoleRefServiceImpl extends ServiceImpl<UserRoleRefMapper, UserRoleRef> implements IUserRoleRefService {
-
+    @Override
+    public void removeUserRoleRefMessageBuUserId(int userId) {
+        baseMapper.delete(new LambdaQueryWrapper<UserRoleRef>().eq(UserRoleRef::getUserId, userId));
+    }
 }

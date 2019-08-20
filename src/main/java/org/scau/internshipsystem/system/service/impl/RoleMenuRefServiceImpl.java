@@ -6,6 +6,8 @@ import org.scau.internshipsystem.system.mapper.RoleMenuRefMapper;
 import org.scau.internshipsystem.system.service.IRoleMenuRefService;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 /**
  * <p>
  *  服务实现类
@@ -16,5 +18,7 @@ import org.springframework.stereotype.Service;
  */
 @Service
 public class RoleMenuRefServiceImpl extends ServiceImpl<RoleMenuRefMapper, RoleMenuRef> implements IRoleMenuRefService {
-
+    public List<Integer> getMenuIdByRoleId(int roleId){
+        return this.baseMapper.getMenuIdByRoleId(roleId);
+    }
 }
