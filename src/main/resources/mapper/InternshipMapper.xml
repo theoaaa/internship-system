@@ -4,4 +4,28 @@
     <select id="getInternshipForUpdate" resultType="org.scau.internshipsystem.system.entity.Internship" parameterType="int">
         select * from internship where id = #{id} for update
     </select>
+    <select id="getInternship" resultType="org.scau.internshipsystem.system.entity.Internship">
+        select id,company,job,address,begin_date,end_date,quota,number,is_publish,filepath,remark from internship
+        <where>
+            <if test="company != null and company != '' ">
+                company like '%${company}%'
+            </if>
+            <if test="job != null and job != '' ">
+                and job like '%${job}%'
+            </if>
+            <if test="number == 0 ">
+                and quota = number
+            </if>
+            <if test="number == 1 ">
+                and quota != number
+            </if>
+            <if test="state == 0">
+                and is_publish = 0
+            </if>
+            <if test="state == 1">
+                and is_publish = 1
+            </if>
+            and is_delete = 0
+        </where>
+    </select>
 </mapper>

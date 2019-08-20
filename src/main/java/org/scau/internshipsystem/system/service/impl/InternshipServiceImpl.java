@@ -1,6 +1,8 @@
 package org.scau.internshipsystem.system.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import lombok.extern.slf4j.Slf4j;
 import org.scau.internshipsystem.system.entity.Internship;
@@ -30,6 +32,15 @@ public class InternshipServiceImpl extends ServiceImpl<InternshipMapper, Interns
     private InternshipMapper internshipMapper;
     private long tot = 0;
     private long cnt = 0;
+    @Override
+    public IPage<Internship> getInternship(Page<Internship> page, String company, String job, Integer number, Integer state) {
+        return internshipMapper.getInternship(page,company,job,number,state);
+    }
+
+    @Override
+    public void deleteById(Integer id) {
+        internshipMapper.deleteById(id);
+    }
     /**
      * 为用户添加实习记录
      * @param userId
