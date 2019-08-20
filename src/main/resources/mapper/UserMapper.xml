@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.scau.internshipsystem.system.mapper.UserMapper">
+
+    <resultMap id="BaseResultMap" type="org.scau.internshipsystem.system.entity.User">
+        <id column="id" property="id"/>
+        <result column="account" property="account" />
+        <result column="username" property="username" />
+        <result column="password" property="password"/>
+        <result column="state" property="state" />
+        <result column="grade" property="grade" />
+        <result column="subject" property="subject" />
+        <result column="email" property="email" />
+        <result column="internship_ref" property="internshipRef"/>
+        <result column="offer_ref" property="offerRef" />
+        <result column="register_time" property="registerTime" />
+        <result column="last_login_time" property="lastLoginTime" />
+        <association property="internship" javaType="org.scau.internshipsystem.system.entity.Internship">
+            <id column="internshipId" property="id" />
+            <result column="company" property="company" />
+            <result column="job" property="job" />
+            <result column="begin_date" property="beginDate" />
+            <result column="end_date" property="endDate" />
+        </association>
+        <association property="offer" javaType="org.scau.internshipsystem.system.entity.Offer">
+            <id column="offerId" property="id"/>
+            <result column="offerCompany" property="company"/>
+            <result column="offerJob" property="job"/>
+            <result column="offerState" property="state"/>
+            <result column="offerImagePath" property="imagePath"/>
+        </association>
+    </resultMap>
+
+    <select id="getUserInternShipInfoList" parameterType="org.scau.internshipsystem.system.param.UserParam" resultMap="BaseResultMap">
+        select `user`.id, `user`.account, `user`.username,`user`.grade,`user`.subject ,
+        internship.id internshipId, internship.company, internship.job, internship.begin_date, internship.end_date
+        from `user`
+        left join internship on `user`.internship_ref = internship.id
+        where 1 = 1
+        <if test="userParam.grade != null and userParam.grade != ''">
+            and `user`.grade like concat(concat("%",#{userParam.grade}),"%")
+        </if>
+        <if test="userParam.subject != null and userParam.subject != ''">
+            and `user`.subject like concat(concat("%",#{userParam.subject}),"%")
+        </if>
+        <if test="userParam.internshipRef != null and userParam.internshipRef == -1">
+            and `user`.internship_ref = -1
+        </if>
+        <if test="userParam.internshipRef != null and userParam.internshipRef == 1">
+            and `user`.internship_ref != -1
+        </if>
+        <if test="userParam.company != null and userParam.company != ''">
+            and internship.company like concat(concat("%",#{userParam.company}),"%")
+        </if>
+        <if test="userParam.job != null and userParam.job != ''">
+            and internship.job like concat(concat("%",#{userParam.job}),"%")
+        </if>
+    </select>
+
+
+    <select id="getUserOfferList" parameterType="org.scau.internshipsystem.system.param.UserParam" resultMap="BaseResultMap">
+        select `user`.id, `user`.username, `user`.grade, `user`.subject,
+        offer.company offerCompany, offer.job offerJob, offer.id offerId, offer.state offerState, offer.image_path offerImagePath
+        from `user`
+        left join offer on `user`.offer_ref = offer.id
+        where 1 = 1
+        <if test="userParam.offerState != null and userParam.offerState != ''">
+            <if test="userParam.offerState == -1">
+                and `user`.offer_ref = -1
+            </if>
+            <if test="userParam.offerState != -1">
+                and `user`.offer_ref != -1
+                and offer.state = #{userParam.offerState}
+            </if>
+        </if>
+        <if test="userParam.grade != null and userParam.grade != ''">
+            and `user`.grade like concat(concat("%",#{userParam.grade}),"%")
+        </if>
+        <if test="userParam.subject != null and userParam.subject != ''">
+            and `user`.subject like concat(concat("%",#{userParam.subject}),"%")
+        </if>
+    </select>
+
+    <select id="getUserForUpdate" parameterType="int" resultType="org.scau.internshipsystem.system.entity.User">
+        select * from user where id = #{id} for update
+    </select>
+</mapper>
