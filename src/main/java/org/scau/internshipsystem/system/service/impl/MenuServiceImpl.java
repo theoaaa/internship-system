@@ -56,7 +56,10 @@ public class MenuServiceImpl extends ServiceImpl<MenuMapper, Menu> implements IM
     @Override
     public List<Menu> findMenuTreeByUserId(int userId) {
         List<Integer> menuIds = this.baseMapper.findMenuIdsByUserId(userId);
-        List<Menu> menus = this.baseMapper.selectList(new LambdaQueryWrapper<Menu>().in(Menu::getId, menuIds));
+        List<Menu> menus = null;
+        if(menuIds != null && ! menuIds.isEmpty()) {
+            menus = this.baseMapper.selectList(new LambdaQueryWrapper<Menu>().in(Menu::getId, menuIds));
+        }
         return MenuTreeUtil.makeTree(menus);
     }
 }

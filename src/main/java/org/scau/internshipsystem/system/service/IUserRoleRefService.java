@@ -12,5 +12,4 @@ import org.scau.internshipsystem.system.entity.UserRoleRef;
  * @since 2019-08-16
  */
 public interface IUserRoleRefService extends IService<UserRoleRef> {
-    public void removeUserRoleRefMessageBuUserId(int userId);
 }

@@ -17,8 +17,4 @@ import org.springframework.stereotype.Service;
  */
 @Service
 public class UserRoleRefServiceImpl extends ServiceImpl<UserRoleRefMapper, UserRoleRef> implements IUserRoleRefService {
-    @Override
-    public void removeUserRoleRefMessageBuUserId(int userId) {
-        baseMapper.delete(new LambdaQueryWrapper<UserRoleRef>().eq(UserRoleRef::getUserId, userId));
-    }
 }

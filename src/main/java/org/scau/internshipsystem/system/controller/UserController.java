@@ -16,17 +16,17 @@ import org.scau.internshipsystem.common.domain.PageVo;
 import org.scau.internshipsystem.system.entity.Role;
 import org.scau.internshipsystem.system.entity.User;
 import org.scau.internshipsystem.system.entity.UserRoleRef;
+import org.scau.internshipsystem.system.param.UserMessageParam;
 import org.scau.internshipsystem.system.param.UserParam;
+import org.scau.internshipsystem.system.service.IMenuService;
 import org.scau.internshipsystem.system.service.IOfferService;
+import org.scau.internshipsystem.system.service.IUserRoleRefService;
 import org.scau.internshipsystem.system.service.IUserService;
-import org.scau.internshipsystem.system.service.impl.MenuServiceImpl;
-import org.scau.internshipsystem.system.service.impl.UserRoleRefServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
-import javax.servlet.http.HttpServletRequest;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -43,17 +43,17 @@ import java.util.List;
 @RequestMapping("/user")
 public class UserController {
     @Resource
-    private IUserService userService;
+    private IUserService userServiceImpl;
     @Resource
-    private IOfferService offerService;
+    private IOfferService offerServiceImpl;
 
     @Autowired
-    MenuServiceImpl menuService;
+    private IMenuService menuServiceImpl;
 
     @Autowired
-    UserRoleRefServiceImpl userRoleRefService;
+    private IUserRoleRefService userRoleRefServiceImpl;
 
-    @ResponseBody
+    
     @GetMapping("")
     @RequiresPermissions("system111")
     public JsonResult findUserMessage(PageQueryRequest pageQueryRequest, User user, Integer roleId){
@@ -64,85 +64,80 @@ public class UserController {
             list.add(role);
             user.setRoleList(list);
         }
-        return JsonResult.success(userService.findUserMessage(pageQueryRequest, user));
+        return JsonResult.success(userServiceImpl.findUserMessage(pageQueryRequest, user));
     }
 
-    @ResponseBody
+    
     @GetMapping("/{id}")
     @RequiresPermissions("system")
     public JsonResult findUserMessageByUserId(@PathVariable int id){
-        return JsonResult.success(userService.findUserMessageByUserId(id));
+        return JsonResult.success(userServiceImpl.findUserMessageByUserId(id));
     }
 
-    @ResponseBody
+    
     @DeleteMapping("/{id}")
     public JsonResult removeUserByUserId(@PathVariable int id){
-        if(userService.removeById(id)){
-            userRoleRefService.removeUserRoleRefMessageBuUserId(id);
+        if(userServiceImpl.removeById(id)){
+            userRoleRefServiceImpl.remove(new LambdaQueryWrapper<UserRoleRef>().eq(UserRoleRef::getUserId, id));
             return JsonResult.success("删除成功");
         }else
             return JsonResult.failure("删除失败，发生未知异常");
     }
 
-    @ResponseBody
-    @PutMapping("")
-    public JsonResult updateUserMessage(@Validated @RequestBody User user, HttpServletRequest req){
-        String roleIds = req.getParameter("roleIdList");
-        if(roleIds == null || roleIds == "") return JsonResult.failure("更新失败，角色列表不能为空");
 
-        if(userService.count(new LambdaQueryWrapper<User>()
-                .eq(User::getAccount, user.getAccount())
-                .ne(User::getId, user.getId()))>0)
+    @PutMapping("")
+    public JsonResult updateUserMessage(@Validated @RequestBody UserMessageParam userParam){
+        if(userServiceImpl.count(new LambdaQueryWrapper<User>()
+                .eq(User::getAccount, userParam.getAccount())
+                .ne(User::getId, userParam.getId()))>0)
             return JsonResult.failure("更新失败，用户已存在");
 
-        if(userService.update(user, new LambdaUpdateWrapper<User>().eq(User::getId, user.getId()))) {
-            userRoleRefService.remove(new LambdaQueryWrapper<UserRoleRef>().eq(UserRoleRef::getUserId, user.getId()));
-            List<Integer> roleIdList = JSON.parseObject(roleIds, List.class);
+        User user = userParam.transformToUser();
+        if(userServiceImpl.update(user, new LambdaUpdateWrapper<User>().eq(User::getId, user.getId()))) {
+            userRoleRefServiceImpl.remove(new LambdaQueryWrapper<UserRoleRef>().eq(UserRoleRef::getUserId, user.getId()));
             List<UserRoleRef> userRoleRefList = new ArrayList<>();
-            roleIdList.forEach(roleId->{
+            userParam.getRoleIdList().forEach(roleId->{
                 UserRoleRef userRoleRef = new UserRoleRef();
                 userRoleRef.setRoleId(roleId);
                 userRoleRef.setUserId(user.getId());
                 userRoleRefList.add(userRoleRef);
             });
-            userRoleRefService.saveBatch(userRoleRefList);
+            userRoleRefServiceImpl.saveBatch(userRoleRefList);
             return JsonResult.success("更新成功");
         }
         return JsonResult.failure("更新失败");
     }
 
-    @ResponseBody
+    
     @PostMapping("")
-    public JsonResult createUser(@Validated @RequestBody User user, HttpServletRequest req){
-        String roleIds = req.getParameter("roleIdList");
-        if(roleIds==null || roleIds == ""){
-            return JsonResult.failure("添加失败，角色列表不能为空");
-        }
-        if(userService.count(
+    public JsonResult createUser(@Validated @RequestBody UserMessageParam addUserParam){
+        if(userServiceImpl.count(
                 new LambdaQueryWrapper<User>()
-                        .eq(User::getAccount, user.getAccount()))>0)
+                        .eq(User::getAccount, addUserParam.getAccount()))>0)
             return JsonResult.failure("添加失败,用户已存在");
+
+        User user = addUserParam.transformToUser();
         user.setRegisterTime(new Date(System.currentTimeMillis()));
         user.setLastLoginTime(new Date(System.currentTimeMillis()));
-        userService.save(user);
-        List<Integer> roleIdList = JSON.parseObject(roleIds, List.class);
+        userServiceImpl.save(user);
+
         List<UserRoleRef> userRoleRefList = new ArrayList<>();
-        roleIdList.forEach(roleId->{
+        addUserParam.getRoleIdList().forEach(roleId->{
             UserRoleRef userRoleRef = new UserRoleRef();
             userRoleRef.setRoleId(roleId);
             userRoleRef.setUserId(user.getId());
             userRoleRefList.add(userRoleRef);
         });
-        userRoleRefService.saveBatch(userRoleRefList);
+        userRoleRefServiceImpl.saveBatch(userRoleRefList);
         return JsonResult.success("添加成功");
     }
 
-    @ResponseBody
+    
     @PostMapping("/batch/del")
     public JsonResult removeBatchUser(@RequestBody String idList){
         List<Integer> userIdList = JSON.parseObject(idList, List.class);
-        if(userService.removeByIds(userIdList)){
-            if(userRoleRefService.remove(new LambdaQueryWrapper<UserRoleRef>()
+        if(userServiceImpl.removeByIds(userIdList)){
+            if(userRoleRefServiceImpl.remove(new LambdaQueryWrapper<UserRoleRef>()
                     .in(UserRoleRef::getUserId, userIdList)))
                 return JsonResult.success("删除成功");
             else
@@ -152,13 +147,13 @@ public class UserController {
         return JsonResult.success("删除失败");
     }
 
-    @ResponseBody
+    
     @GetMapping("/perm/{id}")
     public JsonResult findPermMessageOfUser(@PathVariable int id){
-        return JsonResult.success(menuService.findMenuTreeByUserId(id));
+        return JsonResult.success(menuServiceImpl.findMenuTreeByUserId(id));
     }
 
-    @ResponseBody
+    
     @GetMapping("/login")
     public JsonResult login(){
         Subject subject = SecurityUtils.getSubject();
@@ -173,20 +168,20 @@ public class UserController {
     
     @GetMapping("/internship")
     public JsonResult getUserInternshipDetail(PageVo pageVo, UserParam userParam){
-        Page<User> page = userService.userInternshipDetail(
+        Page<User> page = userServiceImpl.userInternshipDetail(
                 new Page<User>(pageVo.getPage(),pageVo.getPageSize()), userParam);
         return JsonResult.success(page);
     }
 
     @GetMapping("/offer")
     public JsonResult getUserOfferDetail(PageVo pageVo, UserParam userParam){
-        Page<User> page = userService.userOfferDetail(
+        Page<User> page = userServiceImpl.userOfferDetail(
                 new Page<User>(pageVo.getPage(),pageVo.getPageSize()), userParam);
         return JsonResult.success(page);
     }
 
     @GetMapping("/offer/{id}")
     public JsonResult getUserPersonOffer(@PathVariable("id") Integer id){
-        return JsonResult.success(offerService.getById(id));
+        return JsonResult.success(offerServiceImpl.getById(id));
     }
 }

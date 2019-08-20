@@ -9,6 +9,10 @@ import org.scau.internshipsystem.common.domain.PageQueryRequest;
 import org.scau.internshipsystem.common.util.QueryRequestUtil;
 import org.scau.internshipsystem.system.entity.Role;
 import org.scau.internshipsystem.system.entity.RoleMenuRef;
+import org.scau.internshipsystem.system.param.PermOfRoleParam;
+import org.scau.internshipsystem.system.service.IMenuService;
+import org.scau.internshipsystem.system.service.IRoleMenuRefService;
+import org.scau.internshipsystem.system.service.IRoleService;
 import org.scau.internshipsystem.system.service.impl.MenuServiceImpl;
 import org.scau.internshipsystem.system.service.impl.RoleMenuRefServiceImpl;
 import org.scau.internshipsystem.system.service.impl.RoleServiceImpl;
@@ -32,89 +36,90 @@ import java.util.List;
 @RequestMapping("/role")
 public class RoleController {
     @Autowired
-    private RoleServiceImpl roleService;
+    private IRoleService roleServiceImpl;
     @Autowired
-    private MenuServiceImpl menuService;
+    private IMenuService menuServiceImpl;
     @Autowired
-    private RoleMenuRefServiceImpl roleMenuRefService;
+    private IRoleMenuRefService roleMenuRefServiceImpl;
 
-    @ResponseBody
+    
     @GetMapping("")
     public JsonResult getRoleList(PageQueryRequest pageQueryRequest, String roleName) {
         Page<Role> page = new Page<>();
         QueryRequestUtil.setPageQueryRequest(page, pageQueryRequest);
         IPage<Role> roleList = roleName == null ?
-                roleService.page(page) :
-                roleService.page(page, new LambdaQueryWrapper<Role>().like(Role::getRoleName, roleName));
+                roleServiceImpl.page(page) :
+                roleServiceImpl.page(page, new LambdaQueryWrapper<Role>().like(Role::getRoleName, roleName));
         return JsonResult.success(roleList);
     }
 
-    @ResponseBody
+    
     @DeleteMapping("/{id}")
     public JsonResult removeRole(@PathVariable Integer id) {
-        if (roleService.removeById(id))
+        if (roleServiceImpl.removeById(id)) {
+            roleMenuRefServiceImpl.remove(new LambdaQueryWrapper<RoleMenuRef>().eq(RoleMenuRef::getRoleId, id));
             return JsonResult.success("删除成功");
+        }
         else
             return JsonResult.failure("删除失败");
     }
 
-    @ResponseBody
+    
     @PostMapping("")
     public JsonResult addRole(@Validated @RequestBody Role role) {
-        if (roleService.count(new LambdaQueryWrapper<Role>()
+        if (roleServiceImpl.count(new LambdaQueryWrapper<Role>()
                 .eq(Role::getRoleName, role.getRoleName())) > 0)
             return JsonResult.failure("添加失败,该角色已存在");
-        if (roleService.save(role)) {
+        if (roleServiceImpl.save(role)) {
             return JsonResult.success("添加成功");
         }
         return JsonResult.failure("添加失败");
     }
 
-    @ResponseBody
+    
     @GetMapping("/{id}")
     public JsonResult getRoleByRoleId(@PathVariable int id) {
-        Role role = roleService.getById(id);
+        Role role = roleServiceImpl.getById(id);
         if (role != null) {
             return JsonResult.success(role);
         } else
             return JsonResult.failure("角色不存在");
     }
 
-    @ResponseBody
+    
     @PutMapping("")
     public JsonResult updateRoleMessage(@Validated @RequestBody Role role) {
-        if(roleService.count(new LambdaQueryWrapper<Role>()
+        if(roleServiceImpl.count(new LambdaQueryWrapper<Role>()
             .eq(Role::getRoleName, role.getRoleName())
             .ne(Role::getId, role.getId()))>0)
             return JsonResult.failure("修改失败，角色名已存在");
-        boolean res = roleService.update(role, new LambdaQueryWrapper<Role>().eq(Role::getId, role.getId()));
+        boolean res = roleServiceImpl.update(role, new LambdaQueryWrapper<Role>().eq(Role::getId, role.getId()));
         if (res)
             return JsonResult.success("修改成功");
         else
             return JsonResult.failure("修改失败");
     }
 
-    @ResponseBody
-    @PutMapping("/perm/{roleId}")
-    public JsonResult updatePermOfRole(@RequestBody ArrayList<Integer> idList, @PathVariable int roleId) {
+    
+    @PutMapping("/perm")
+    public JsonResult updatePermOfRole(@RequestBody @Validated PermOfRoleParam param) {
 
-        roleMenuRefService.remove(new LambdaQueryWrapper<RoleMenuRef>()
-                .eq(RoleMenuRef::getRoleId, roleId));
+        roleMenuRefServiceImpl.remove(new LambdaQueryWrapper<RoleMenuRef>()
+                .eq(RoleMenuRef::getRoleId, param.getRoleId()));
         List<RoleMenuRef> refs = new ArrayList<>();
-        idList.forEach(menuId -> {
+        param.getMenuIds().forEach(menuId -> {
             RoleMenuRef ref = new RoleMenuRef();
-            ref.setRoleId(roleId);
+            ref.setRoleId(param.getRoleId());
             ref.setMenuId(menuId);
             refs.add(ref);
         });
-        if (roleMenuRefService.saveBatch(refs))
+        if (roleMenuRefServiceImpl.saveBatch(refs))
             return JsonResult.success("修改成功");
         return JsonResult.failure("修改失败");
     }
 
-    @ResponseBody
     @GetMapping("/perm/{id}")
     public JsonResult getMenuByRoleId(@PathVariable int id){
-        return JsonResult.success(menuService.getMenuTreeByRoleId(id));
+        return JsonResult.success(menuServiceImpl.getMenuTreeByRoleId(id));
     }
 }
